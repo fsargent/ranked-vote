@@ -13,13 +13,48 @@ pub struct CvrExport {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Session {
-    tabulator_id: u32,
-    batch_id: u32,
-    pub record_id: u32,
-    counting_group_id: u32,
-    image_mask: String,
-    original: SessionBallot,
-    modified: Option<SessionBallot>,
+    pub tabulator_id: u32,
+    pub batch_id: u32,
+    #[serde(deserialize_with = "deserialize_record_id")]
+    pub record_id: String,
+    pub counting_group_id: u32,
+    pub image_mask: String,
+    pub original: SessionBallot,
+    pub modified: Option<SessionBallot>,
+}
+
+fn deserialize_record_id<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de::{Error, Visitor};
+    use std::fmt;
+
+    struct RecordIdVisitor;
+
+    impl<'de> Visitor<'de> for RecordIdVisitor {
+        type Value = String;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("string or integer record id")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: Error,
+        {
+            Ok(value.to_string())
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+        where
+            E: Error,
+        {
+            Ok(value.to_string())
+        }
+    }
+
+    deserializer.deserialize_any(RecordIdVisitor)
 }
 
 impl Session {

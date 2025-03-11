@@ -2,20 +2,21 @@
 
 set -e
 
-if [ -d election-metadata ]
-then
-    echo "Skipping election-metadata; already exists."
-else
-    git clone git@github.com:ranked-vote/election-metadata.git
-fi
+# Initialize and update submodules
+git submodule init
+git submodule update
 
-if [ -d reports ]
-then
-    echo "Skipping reports; already exists."
-else
-    git clone git@github.com:ranked-vote/reports.git
-fi
+# Create directories
+mkdir -p raw-data
+mkdir -p preprocessed
 
-aws s3 cp s3://raw.ranked.vote raw-data --recursive
-aws s3 cp s3://data.ranked.vote preprocessed --recursive
+echo "Downloading election data..."
+aws s3 sync \
+    --no-sign-request \
+    --exclude ".*" \
+    --exclude "*/.*" \
+    s3://raw.ranked.vote/ raw-data/
+
+echo "Downloaded election data to raw-data/"
+
 
